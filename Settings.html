@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <base target="_top">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #f9fafb; }
+        #loadingOverlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(255, 255, 255, 0.8); display: flex; align-items: center; justify-content: center; z-index: 9999; }
+        .spinner { border: 4px solid rgba(0, 0, 0, 0.1); width: 36px; height: 36px; border-radius: 50%; border-left-color: #059669; animation: spin 1s ease infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .password-container { position: relative; }
+        .toggle-password { position: absolute; top: 50%; right: 12px; transform: translateY(-50%); cursor: pointer; color: #6b7280; }
+    </style>
+</head>
+<body class="text-gray-800">
+
+    <div id="loadingOverlay"><div class="spinner"></div></div>
+
+    <div id="settingsContent" class="hidden">
+        <header class="bg-white shadow-sm">
+            <div class="max-w-4xl mx-auto py-4 px-4 sm:px-6 lg:px-8 flex justify-between items-center">
+                <h1 class="text-2xl font-bold text-gray-800">Pengaturan Akun</h1>
+                <a href="#" id="backToDashboard" class="text-sm font-medium text-green-600 hover:text-green-800">&larr; Kembali ke Dashboard</a>
+            </div>
+        </header>
+
+        <main class="max-w-4xl mx-auto py-6 sm:px-6 lg:px-8">
+            <div class="bg-white p-8 rounded-xl shadow-lg">
+                <form id="settingsForm" class="space-y-6">
+                    <div>
+                        <label for="name" class="block text-sm font-medium text-gray-700">Nama Lengkap</label>
+                        <input type="text" id="name" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500">
+                    </div>
+                    <div>
+                        <label for="email" class="block text-sm font-medium text-gray-700">Email</label>
+                        <input type="email" id="email" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500">
+                    </div>
+                    <hr>
+                    <div>
+                        <label for="newPassword" class="block text-sm font-medium text-gray-700">Password Baru</label>
+                        <div class="password-container mt-1">
+                            <input type="password" id="newPassword" class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500" placeholder="Kosongkan jika tidak ingin diubah">
+                            <span class="toggle-password" onclick="togglePasswordVisibility('newPassword', 'toggleIcon1')">
+                                <svg id="toggleIcon1" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                            </span>
+                        </div>
+                        <p class="mt-1 text-xs text-gray-500">Isi kolom ini hanya jika Anda ingin mengubah password Anda.</p>
+                    </div>
+                     <div>
+                        <label for="confirmPassword" class="block text-sm font-medium text-gray-700">Konfirmasi Password Baru</label>
+                        <div class="password-container mt-1">
+                            <input type="password" id="confirmPassword" class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500" placeholder="Ketik ulang password baru Anda">
+                             <span class="toggle-password" onclick="togglePasswordVisibility('confirmPassword', 'toggleIcon2')">
+                                <svg id="toggleIcon2" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                            </span>
+                        </div>
+                    </div>
+                    <div>
+                        <button type="submit" id="saveButton" class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-700 hover:bg-green-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                            Simpan Perubahan
+                        </button>
+                    </div>
+                </form>
+                <p id="message" class="text-center text-sm mt-4"></p>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        let currentUser = null;
+
+        function populateForm(data) {
+            if (data.success) {
+                document.getElementById('name').value = data.name;
+                document.getElementById('email').value = data.email;
+            } else {
+                document.getElementById('message').textContent = 'Gagal memuat profil: ' + data.message;
+            }
+            document.getElementById('loadingOverlay').style.display = 'none';
+            document.getElementById('settingsContent').classList.remove('hidden');
+        }
+        
+        function togglePasswordVisibility(fieldId, iconId) {
+            const passwordField = document.getElementById(fieldId);
+            const icon = document.getElementById(iconId);
+            const isPassword = passwordField.type === 'password';
+            passwordField.type = isPassword ? 'text' : 'password';
+            icon.innerHTML = isPassword ? 
+                `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.542-7 .95-3.11 4.236-5.48 8.042-5.95M15 12a3 3 0 11-6 0 3 3 0 016 0z" />` : 
+                `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>`;
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            const userData = localStorage.getItem('qurbanUser');
+            if (!userData) {
+                window.top.location.href = "<?= ScriptApp.getService().getUrl() ?>?page=login";
+            } else {
+                try {
+                    currentUser = JSON.parse(userData);
+                    
+                    // Cek apakah user adalah admin dari data yang tersimpan
+                    const isAdmin = currentUser.isAdmin === true;
+                    const baseUrl = "<?= ScriptApp.getService().getUrl() ?>";
+                    const dashboardUrl = isAdmin ? `${baseUrl}?page=admin` : `${baseUrl}?page=dashboard`;
+                    
+                    document.getElementById('backToDashboard').href = dashboardUrl;
+                    document.getElementById('backToDashboard').target = '_top';
+                    
+                    google.script.run
+                        .withSuccessHandler(populateForm)
+                        .withFailureHandler(error => {
+                            alert('Error: ' + error.message);
+                        })
+                        .getUserProfile(currentUser.userId);
+
+                } catch (e) {
+                    console.error("Gagal memproses data user:", e);
+                    localStorage.removeItem('qurbanUser');
+                    window.top.location.href = "<?= ScriptApp.getService().getUrl() ?>?page=login";
+                }
+            }
+        });
+
+        document.getElementById('settingsForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const button = document.getElementById('saveButton');
+            const messageEl = document.getElementById('message');
+            const newPassword = document.getElementById('newPassword').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+
+            messageEl.textContent = '';
+            messageEl.className = 'text-center text-sm mt-4';
+
+            if (newPassword && newPassword !== confirmPassword) {
+                messageEl.textContent = 'Password baru dan konfirmasi password tidak cocok.';
+                messageEl.classList.add('text-red-600');
+                return;
+            }
+            
+            button.disabled = true;
+            button.textContent = 'Menyimpan...';
+
+            const updateData = {
+                userId: currentUser.userId,
+                name: document.getElementById('name').value,
+                email: document.getElementById('email').value,
+                newPassword: newPassword // Hanya kirim jika ada isinya
+            };
+
+            google.script.run
+                .withSuccessHandler(function(response) {
+                    messageEl.textContent = response.message;
+                    if (response.success) {
+                        messageEl.classList.add('text-green-600');
+                        let updatedUser = JSON.parse(localStorage.getItem('qurbanUser'));
+                        updatedUser.name = response.updatedUser.name;
+                        updatedUser.email = response.updatedUser.email;
+                        localStorage.setItem('qurbanUser', JSON.stringify(updatedUser));
+                        
+                        document.getElementById('newPassword').value = '';
+                        document.getElementById('confirmPassword').value = '';
+                    } else {
+                        messageEl.classList.add('text-red-600');
+                    }
+                    button.disabled = false;
+                    button.textContent = 'Simpan Perubahan';
+                })
+                .withFailureHandler(function(error) {
+                    messageEl.textContent = 'Error: ' + error.message;
+                    messageEl.classList.add('text-red-600');
+                    button.disabled = false;
+                    button.textContent = 'Simpan Perubahan';
+                })
+                .updateUserProfile(updateData);
+        });
+    </script>
+</body>
+</html>
